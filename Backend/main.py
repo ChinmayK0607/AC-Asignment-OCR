@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,7 +26,9 @@ app = FastAPI()
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
 
 # Groq API configuration
-GROQ_API_KEY = "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"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY environment variable is not set")
 groq_client = Groq(api_key=GROQ_API_KEY)
 
 class SummarizeRequest(BaseModel):
