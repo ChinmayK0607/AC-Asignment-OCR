@@ -1,3 +1,4 @@
+
 # OCR and Summarization Web Application
 
 This project implements a web-based Optical Character Recognition (OCR) application that allows users to upload images, extract text from them, and obtain a summary of the extracted text using AI.
@@ -55,8 +56,9 @@ This application provides a web interface for users to upload images, extract te
 Backend/
 ├── main.py              # FastAPI application, OCR logic, and summarization
 ├── Frontend/
-│  └── app.html         # Web interface
-├── testing.py       # Stress testing script inside the Testing Folder
+│  └── app.html          # Web interface
+├── testing/
+│  └── testing.py    # Stress testing script
 ├── images/              # Folder to store test images for stress testing
 └── README.md            # Project documentation
 ```
@@ -75,7 +77,22 @@ Backend/
 
 3. Set up your Groq API key:
    - Sign up for a Groq account and obtain your API key
-   - Set the `GROQ_API_KEY` variable in `main.py` with your API key
+   - Set the environment variable for the API key:
+
+   **For Windows Command Prompt:**
+   ```bash
+   set GROQ_API_KEY=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
+   ```
+
+   **For Windows PowerShell:**
+   ```bash
+   $env:GROQ_API_KEY="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"
+   ```
+
+   **For Linux or macOS:**
+   ```bash
+   export GROQ_API_KEY="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"
+   ```
 
 4. Prepare test images:
    - Create an `images` folder in the project directory
@@ -94,7 +111,7 @@ Backend/
 
 4. To run the stress test:
    ```bash
-   python stress_test.py
+   python testing/stress_test.py
    ```
 
 ## Architecture and Workflow
@@ -133,7 +150,7 @@ Backend/
 
 ## Stress Testing
 
-The `stress_test.py` script performs the following:
+The `testing.py` script performs the following:
 
 - Sends multiple concurrent requests to the OCR endpoint
 - Measures individual request latencies and overall throughput
@@ -145,6 +162,5 @@ The `stress_test.py` script performs the following:
 
 To run the stress test, ensure you have images in the `images` folder and run:
 ```bash
-python stress_test.py
+python testing/testing.py
 ```
-
