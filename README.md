@@ -148,11 +148,3 @@ To run the stress test, ensure you have images in the `images` folder and run:
 python stress_test.py
 ```
 
-## Future Improvements
-
-- Implement user authentication and rate limiting
-- Add support for multiple languages in OCR
-- Introduce a queue system for handling high load scenarios
-- Develop a more sophisticated frontend with progress indicators and batch processing
-- Implement serverless deployment for better scalability
-- Add unit and integration tests for improved code reliability
