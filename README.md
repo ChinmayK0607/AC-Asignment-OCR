@@ -81,17 +81,17 @@ Backend/
 
    **For Windows Command Prompt:**
    ```bash
-   set GROQ_API_KEY=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
+   set GROQ_API_KEY=<YOUR-API-KEY-HERE>
    ```
 
    **For Windows PowerShell:**
    ```bash
-   $env:GROQ_API_KEY="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"
+   $env:GROQ_API_KEY=<YOUR-API-KEY-HERE>
    ```
 
    **For Linux or macOS:**
    ```bash
-   export GROQ_API_KEY="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"
+   export GROQ_API_KEY="<YOUR-API-KEY-HERE>"
    ```
 
 4. Prepare test images:
@@ -164,3 +164,5 @@ To run the stress test, ensure you have images in the `images` folder and run:
 ```bash
 python testing/testing.py
 ```
+## NOTE
+Please check python version and ensure it to be above 3.9.0
