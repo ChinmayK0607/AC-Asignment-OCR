@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Define the directory for static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Create a ThreadPoolExecutor
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
@@ -78,7 +78,7 @@ async def summarize_text(text: str) -> str:
 
 @app.get("/")
 async def serve_index():
-    return FileResponse("static/app.html")
+    return FileResponse("Frontend/app.html")
 
 @app.post("/ocr")
 async def ocr_and_summarize(file: UploadFile = File(...)):
