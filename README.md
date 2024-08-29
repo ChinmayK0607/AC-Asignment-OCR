@@ -52,11 +52,11 @@ This application provides a web interface for users to upload images, extract te
 ## Project Structure
 
 ```
-ocr_project/
+Backend/
 ├── main.py              # FastAPI application, OCR logic, and summarization
-├── static/
-│   └── app.html         # Web interface
-├── stress_test.py       # Stress testing script
+├── Frontend/
+│  └── app.html         # Web interface
+├── testing.py       # Stress testing script inside the Testing Folder
 ├── images/              # Folder to store test images for stress testing
 └── README.md            # Project documentation
 ```
