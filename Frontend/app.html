@@ -1,86 +1,176 @@
-import asyncio
-import concurrent.futures
-import io
-import logging
-import time
-from functools import lru_cache
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR and Summarization</title>
+    <style>
+        body, html {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-file-input {
+            border: 2px solid #007bff;
+            color: #007bff;
+            background-color: transparent;
+        }
+        .btn-upload {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        .output {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .hidden {
+            display: none;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #d9534f;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OCR and Summarization</h1>
+        <div class="file-input-wrapper">
+            <button class="btn btn-file-input">Choose Image</button>
+            <input type="file" id="imageInput" accept="image/*" />
+        </div>
+        <button id="uploadBtn" class="btn btn-upload" onclick="uploadImage()">Upload and Process</button>
+        <div id="loader" class="loader hidden"></div>
+        <div id="error" class="error hidden"></div>
+        <div id="outputSection" class="output hidden">
+            <h2>Extracted Text</h2>
+            <textarea id="extractedText" readonly></textarea>
+            <h2>Summary</h2>
+            <textarea id="summary" readonly></textarea>
+            <h2>Performance</h2>
+            <p>Time taken: <span id="latency"></span> seconds</p>
+        </div>
+    </div>
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loader = document.getElementById('loader');
+        const outputSection = document.getElementById('outputSection');
+        const errorElement = document.getElementById('error');
 
-import pytesseract
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-from PIL import Image
+        imageInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                uploadBtn.textContent = `Process: ${e.target.files[0].name}`;
+                uploadBtn.disabled = false;
+            }
+        });
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+        async function uploadImage() {
+            const file = imageInput.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
 
-app = FastAPI()
+                try {
+                    loader.classList.remove('hidden');
+                    uploadBtn.disabled = true;
+                    outputSection.classList.add('hidden');
+                    errorElement.classList.add('hidden');
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Create a ThreadPoolExecutor
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
-
-@lru_cache(maxsize=128)
-def get_tesseract_config():
-    """Cache the Tesseract configuration."""
-    return r'--oem 3 --psm 3'
-
-def preprocess_image(image: Image.Image) -> Image.Image:
-    """Preprocess the image for better OCR results."""
-    image = image.convert('L')  # Convert to grayscale
-    return image.resize((image.width // 2, image.height // 2))  # Resize
-
-def process_image(image_bytes: bytes) -> str:
-    """Process the image and extract text using OCR."""
-    try:
-        with Image.open(io.BytesIO(image_bytes)) as image:
-            logger.info(f"Image opened, size: {image.size}")
-            
-            image = preprocess_image(image)
-            logger.info("Image preprocessed")
-            
-            custom_config = get_tesseract_config()
-            text = pytesseract.image_to_string(image, config=custom_config)
-            logger.info("OCR processing completed")
-        
-        return text
-    except Exception as e:
-        logger.error(f"Error processing image: {str(e)}")
-        raise
-
-@app.get("/")
-async def serve_index():
-    """Serve the main HTML page."""
-    return FileResponse("static/app.html")
-
-@app.post("/ocr")
-async def ocr_endpoint(file: UploadFile = File(...)):
-    """Endpoint for OCR processing."""
-    start_time = time.time()
-    
-    if not file.filename.lower().endswith(('png', 'jpg', 'jpeg')):
-        logger.warning("Invalid file type uploaded")
-        raise HTTPException(status_code=400, detail="Invalid file type. Only image files are allowed.")
-    
-    image_bytes = await file.read()
-
-    try:
-        logger.info(f"Received image file '{file.filename}' of size {len(image_bytes)} bytes")
-        
-        loop = asyncio.get_running_loop()
-        text = await loop.run_in_executor(executor, process_image, image_bytes)
-        
-        latency = time.time() - start_time
-        logger.info(f"Total request processing time: {latency:.4f} seconds")
-        
-        return JSONResponse(content={"text": text, "latency": latency})
-    except Exception as e:
-        logger.error(f"Error during OCR processing: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000, workers=4)
+                    const response = await fetch('/ocr', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    document.getElementById('extractedText').value = data.text;
+                    document.getElementById('summary').value = data.summary;
+                    document.getElementById('latency').textContent = data.latency.toFixed(4);
+                    
+                    outputSection.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error:', error);
+                    errorElement.textContent = `An error occurred: ${error.message}`;
+                    errorElement.classList.remove('hidden');
+                } finally {
+                    loader.classList.add('hidden');
+                    uploadBtn.disabled = false;
+                }
+            } else {
+                errorElement.textContent = 'Please select an image file.';
+                errorElement.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
